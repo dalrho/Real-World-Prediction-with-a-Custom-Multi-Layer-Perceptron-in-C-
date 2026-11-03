@@ -1,0 +1,4 @@
+model,test_rmse_mean,test_rmse_std,test_mae_mean,test_r2_mean
+Neural network (mean of seeds),5.58244,0.173253,4.13132,0.885339
+Predict training mean,16.6602,0,13.5773,-0.020448
+Linear regression (OLS),11.7699,0,8.82891,0.490692
