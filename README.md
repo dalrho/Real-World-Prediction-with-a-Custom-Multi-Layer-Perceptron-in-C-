@@ -98,23 +98,29 @@ equivalent to training separately for each epoch count. The grid uses momentum 0
 | `*.png` | all charts |
 
 ## Results
-*(Fill in after running `all`.)*
 
 | Model | Test RMSE (MPa) | Test MAE (MPa) | Test R² |
 |---|---|---|---|
-| Predict training mean | | | |
-| Linear regression | | | |
-| Neural network (best config) | | | |
+| Predict training mean |16.66 | 13.58 | -0.020 |
+| Linear regression | 11.77 | 8.83 | 0.491 |
+| Neural network (best config) | 5.58 ± 0.17 | 4.13 | 0.885 |
 
-**Selected configuration:** learning rate = , hidden nodes = , epochs = , momentum = , weight decay = .
+The neural network figures are means over seeds. The ± is the standard deviation of test RMSE.
 
-## Analysis
-*(Write after viewing the charts. Suggested points.)*
-- **Learning rate:** too low underfits within the epoch budget; too high oscillates or diverges
-  (cells marked "div." in the heatmap).
-- **Hidden nodes:** few nodes underfit; many nodes lower the training error but may widen the
-  train/validation gap (`overfit_gap` column).
-- **Epochs:** compare the training and validation curves in `epochs_effect.png` and `loss_curves.png`.
-- **Momentum and weight decay:** compare `sweep_results.csv` against the grid winner.
-- **Seed variance:** is the winner's advantage larger than the standard deviation across seeds?
-- **Residuals:** any pattern (for example, larger errors at high strength) points to model limits.
+**Selected configuration:** learning rate = 0.01, hidden nodes = 16, epochs = 500, momentum = 0.5, weight decay = 0.0001.
+
+## Discussion
+
+- **Learning rate.** The best results sit in the 0.005 to 0.01 columns (about 5.9 to 6.6 RMSE for 4 or more nodes). At 0.001 the network is probably still underfitting within 500 epochs. At 0.05 error rises (6.7 to 9.1), and at 0.1 it is poor everywhere (8.9 to 9.7). The 32-node network at 0.1 diverges outright. Higher learning rates fail harder as width grows.
+
+- **Hidden nodes.** 2 nodes clearly underfit (7.6 to 9.7). Error drops sharply by 4 to 8 nodes and is best at 16 (5.93 at lr 0.01). At 32 nodes it gets worse again (6.5 to 6.8 at the same learning rates), so extra capacity does not help here. I can’t say whether that is overfitting or unstable training without the overfit_gap column.
+
+- **Epochs.** The validation curve drops fast over the first ~60 epochs, then flattens and keeps improving slowly, reaching about 5.5 to 5.7 by epoch 500. Training RMSE ends near 4.0, a gap of about 1.5 MPa. There is no sign of validation error turning upward, so early stopping isn’t needed. The still-falling curve suggests more epochs might help slightly. The validation curve is noisy (swings of about ±0.3), which is typical of stochastic updates with momentum.
+
+- **Momentum and weight decay.** These weren’t in the grid, so compare the winner against sweep_results.csv. Add that comparison here.
+
+- **Seed variance.** The winner’s margin over its neighbors is small: 5.93 versus 5.97 (lr 0.005, 16 nodes), 6.01 (lr 0.001, 32 nodes) and 6.06 (lr 0.005, 8 nodes). That is well inside the ±0.17 seed standard deviation. So the best config is really a plateau of roughly equivalent models rather than a clear winner. The gap to the baselines is not ambiguous: 5.58 versus 11.77 for OLS is about 35 standard deviations.
+
+- **Residuals.** Residuals. The residuals scatter around zero across the whole range of predicted strength (about 3 to 80 MPa), with no curve or trend. That suggests the network has captured the main nonlinear structure and is not systematically biased at either end. The spread is roughly constant (mostly within ±10 MPa), with no clear funnel shape, so there is little evidence of heteroscedasticity.
+
+- **Overall.** The network explains about 89% of the variance in concrete strength, against 49% for linear regression. This shows the relationship is substantially nonlinear. The test RMSE (5.58) is a bit lower than the grid’s validation RMSE (5.93), which is plausible since they are different data splits.
